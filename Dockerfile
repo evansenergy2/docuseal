@@ -1,84 +1,40 @@
-FROM ruby:3.4.2-alpine AS fonts
+FROM ccyphersatee/ee-build-base
 
-WORKDIR /fonts
+COPY app /app/app
+COPY db /app/db
+COPY config /app/config
+COPY config.ru /app/config.ru
+COPY Gemfile /app/Gemfile
+COPY Gemfile.lock /app/Gemfile.lock
+COPY package.json /app/package.json
+COPY Rakefile /app/Rakefile
+COPY Procfile /app/Procfile
+COPY bin /app/bin
+COPY public /app/public
+COPY lib /app/lib
 
-RUN apk --no-cache add fontforge wget && wget https://github.com/satbyy/go-noto-universal/releases/download/v7.0/GoNotoKurrent-Regular.ttf && wget https://github.com/satbyy/go-noto-universal/releases/download/v7.0/GoNotoKurrent-Bold.ttf && wget https://github.com/impallari/DancingScript/raw/master/fonts/DancingScript-Regular.otf && wget https://cdn.jsdelivr.net/gh/notofonts/notofonts.github.io/fonts/NotoSansSymbols2/hinted/ttf/NotoSansSymbols2-Regular.ttf && wget https://github.com/Maxattax97/gnu-freefont/raw/master/ttf/FreeSans.ttf && wget https://github.com/impallari/DancingScript/raw/master/OFL.txt
 
-RUN fontforge -lang=py -c 'font1 = fontforge.open("FreeSans.ttf"); font2 = fontforge.open("NotoSansSymbols2-Regular.ttf"); font1.mergeFonts(font2); font1.generate("FreeSans.ttf")'
-
-FROM ruby:3.4.2-alpine AS webpack
-
-ENV RAILS_ENV=production
-ENV NODE_ENV=production
-
-WORKDIR /app
-
-RUN apk add --no-cache nodejs yarn git build-base && \
-    gem install shakapacker
-
-COPY ./package.json ./yarn.lock ./
-
-RUN yarn install --network-timeout 1000000
-
-COPY ./bin/shakapacker ./bin/shakapacker
-COPY ./config/webpack ./config/webpack
-COPY ./config/shakapacker.yml ./config/shakapacker.yml
-COPY ./postcss.config.js ./postcss.config.js
-COPY ./tailwind.config.js ./tailwind.config.js
-COPY ./tailwind.form.config.js ./tailwind.form.config.js
-COPY ./tailwind.application.config.js ./tailwind.application.config.js
-COPY ./app/javascript ./app/javascript
-COPY ./app/views ./app/views
-
-RUN echo "gem 'shakapacker'" > Gemfile && ./bin/shakapacker
-
-FROM ruby:3.4.2-alpine AS app
-
-ENV RAILS_ENV=production
-ENV BUNDLE_WITHOUT="development:test"
-ENV LD_PRELOAD=/lib/libgcompat.so.0
-ENV OPENSSL_CONF=/app/openssl_legacy.cnf
 
 WORKDIR /app
 
-RUN echo '@edge https://dl-cdn.alpinelinux.org/alpine/edge/community' >> /etc/apk/repositories && apk add --no-cache sqlite-dev libpq-dev mariadb-dev vips-dev vips-poppler poppler-utils redis libheif@edge vips-heif gcompat ttf-freefont && mkdir /fonts && rm /usr/share/fonts/freefont/FreeSans.otf
+ENV PATH=/opt/node/bin:/usr/local/rvm/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/bun/bin:/usr/local/rvm/rubies/ruby-3.3.4/bin
+RUN apt update && apt upgrade -y && apt install -y --no-install-recommends sudo ruby-vips && \
+    useradd -M -d /app app_user && \
+    npm i yarn -g && \
+    bundle install && \
+    npm i webpack -g && \
+    npm i && \
+    bundle exec rake assets:precompile && \
+    mkdir -p mkdir -p /app/tmp/pids && chown -R app_user /app
+    
+    
+# apt remove -y build-essential unzip curl gnupg && apt autoremove -y && apt clean && rm -rf /var/lib/apt/lists/*
 
-RUN echo $'.include = /etc/ssl/openssl.cnf\n\
-\n\
-[provider_sect]\n\
-default = default_sect\n\
-legacy = legacy_sect\n\
-\n\
-[default_sect]\n\
-activate = 1\n\
-\n\
-[legacy_sect]\n\
-activate = 1' >> /app/openssl_legacy.cnf
+CMD [ "bundle exec rails s -p 5000" ]
 
-COPY ./Gemfile ./Gemfile.lock ./
 
-RUN apk add --no-cache build-base && bundle install && apk del --no-cache build-base && rm -rf ~/.bundle /usr/local/bundle/cache && ruby -e "puts Dir['/usr/local/bundle/**/{spec,rdoc,resources/shared,resources/collation,resources/locales}']" | xargs rm -rf
 
-COPY ./bin ./bin
-COPY ./app ./app
-COPY ./config ./config
-COPY ./db/migrate ./db/migrate
-COPY ./log ./log
-COPY ./lib ./lib
-COPY ./public ./public
-COPY ./tmp ./tmp
-COPY LICENSE README.md Rakefile config.ru .version ./
-COPY .version ./public/version
+# Rails.application.secret_key_base
+# opm get bungle/lua-resty-nettle
+# opm get fffonion/lua-resty-openssl
 
-COPY --from=fonts /fonts/GoNotoKurrent-Regular.ttf /fonts/GoNotoKurrent-Bold.ttf /fonts/DancingScript-Regular.otf /fonts/OFL.txt /fonts
-COPY --from=fonts /fonts/FreeSans.ttf /usr/share/fonts/freefont
-COPY --from=webpack /app/public/packs ./public/packs
-
-RUN ln -s /fonts /app/public/fonts
-RUN bundle exec bootsnap precompile --gemfile app/ lib/
-
-WORKDIR /data/docuseal
-ENV WORKDIR=/data/docuseal
-
-EXPOSE 3000
-CMD ["/app/bin/bundle", "exec", "puma", "-C", "/app/config/puma.rb", "--dir", "/app"]

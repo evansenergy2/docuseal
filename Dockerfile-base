@@ -1,0 +1,33 @@
+FROM ruby:3.4.4-bookworm
+
+COPY apt_sources/openresty.list /tmp/openresty.list
+COPY Gemfile /app/Gemfile
+COPY Gemfile.lock /app/Gemfile.lock
+COPY package.json /app/package.json
+COPY ee-ui/package.json /app/ee-ui/package.json
+COPY ee-ui/package-lock.json /app/ee-ui/package-lock.json
+
+WORKDIR /app
+
+ENV PATH=/opt/node/bin:/usr/local/rvm/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/bun/bin:/usr/local/rvm/rubies/ruby-3.3.4/bin
+
+RUN apt update && apt upgrade -y && apt install -y --no-install-recommends tesseract-ocr ocrmypdf gpg wget libpq-dev gnupg ca-certificates build-essential unzip curl procps && \
+    curl -fsSL -o /tmp/pubkey.gpg https://openresty.org/package/pubkey.gpg && \
+    curl -fsSL -o /tmp/node-v20.17.0-linux-x64.tar.xz https://nodejs.org/dist/v20.17.0/node-v20.17.0-linux-x64.tar.xz && \
+    cd /tmp && unxz node-v20.17.0-linux-x64.tar.xz && \
+    tar -xvf node-v20.17.0-linux-x64.tar && mv node-v20.17.0-linux-x64 /opt/node && \
+    cat /tmp/pubkey.gpg | gpg --dearmor -o /etc/apt/trusted.gpg.d/openresty.gpg && \
+    mv /tmp/openresty.list /etc/apt/sources.list.d/openresty.list && \
+    apt update && apt install -y openresty libtest-nginx-perl && \
+    opm get bungle/lua-resty-nettle fffonion/lua-resty-openssl leafo/pgmoon && \
+    curl -fsSL -o /tmp/bun.sh https://bun.sh/install && chmod 755 /tmp/bun.sh && /tmp/bun.sh && \
+    mv /root/.bun /usr/local/bun && \
+    cd /app && /usr/local/bin/bundle install && \
+    /usr/local/bun/bin/bun install && \
+    cd /app/ee-ui && \
+    npm install && \
+    npm install --include=optional sharp && \
+    egrep -v "<policy domain=\"coder\" rights=\"none\" pattern=\"PDF\" />" /etc/ImageMagick-6/policy.xml > /tmp/policy.xml && \
+    mv /tmp/policy.xml /etc/ImageMagick-6/policy.xml && \
+    rm -rf /root/.local /root/.bun /root/.cache /usr/local/bundle/cache /tmp/* /root/.bundle /root/.npm
+    #apt purge -y wget gnupg ca-certificates build-essential unzip curl && apt -y autoremove

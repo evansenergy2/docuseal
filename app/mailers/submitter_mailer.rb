@@ -33,7 +33,7 @@ class SubmitterMailer < ApplicationMailer
 
     assign_message_metadata('submitter_invitation', @submitter)
 
-    reply_to = build_submitter_reply_to(@submitter)
+    # reply_to = build_submitter_reply_to(@submitter)
 
     I18n.with_locale(@current_account.locale) do
       subject = build_invite_subject(@subject, @email_config, submitter)
@@ -42,7 +42,7 @@ class SubmitterMailer < ApplicationMailer
         to: @submitter.friendly_name,
         from: from_address_for_submitter(submitter),
         subject:,
-        reply_to:
+        # reply_to:
       )
     end
   end
@@ -136,8 +136,7 @@ class SubmitterMailer < ApplicationMailer
           I18n.t(:your_document_copy)
         end
 
-      mail(from: from_address_for_submitter(submitter),
-           to: to || @submitter.friendly_name,
+      mail(to: to || @submitter.friendly_name,
            reply_to:,
            subject:)
     end

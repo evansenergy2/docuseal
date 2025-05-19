@@ -49,10 +49,14 @@ end
 #
 # preload_app!
 
+Sidekiq.configure_server do |config|
+  config.redis = { url: ENV['REDIS_URL'] || 'redis://127.0.0.1:6379/0' }
+end
+
 if ENV['MULTITENANT'] != 'true' || ENV['DEMO'] == 'true'
-  require_relative '../lib/puma/plugin/redis_server'
+  # require_relative '../lib/puma/plugin/redis_server'
   require_relative '../lib/puma/plugin/sidekiq_embed'
 
   plugin :sidekiq_embed
-  plugin :redis_server
+  # plugin :redis_server
 end
