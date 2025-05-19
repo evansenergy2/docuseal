@@ -216,9 +216,10 @@ export default {
       return actions
     },
     validateSaveAndClose () {
-      if (!this.withConditions) {
-        return alert(this.t('available_only_in_pro'))
-      }
+      console.log('TICK2')
+      // if (!this.withConditions) {
+      //   return alert(this.t('available_only_in_pro'))
+      // }
 
       if (this.conditions.find((f) => f.field_uuid)) {
         this.item.conditions = this.conditions

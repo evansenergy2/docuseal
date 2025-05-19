@@ -1,0 +1,44 @@
+# fly.toml app configuration file generated for ee-rails-prod on 2025-03-25T08:57:37-05:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'ee-docuseal'
+primary_region = 'dfw'
+console_command = '/rails/bin/rails console'
+swap_size_mb = 1024
+
+[deploy]
+  strategy = "rolling"
+  max_unavailable = 1
+
+[build]
+  dockerfile = "Dockerfile"
+
+[http_service]
+  internal_port = 5000
+  force_https = false
+  auto_start_machines = true
+  min_machines_running = 2
+  processes = ['app']
+
+[[http_service.checks]]
+  grace_period = "5m"
+  interval = "1m"
+  method = "GET"
+  timeout = "5m"
+  path = "/"
+
+
+[mounts]
+  source = "docuseal"
+  destination = "/storage"
+
+[[vm]]
+  size = 'shared-cpu-2x'
+  #size = 'performance-4x'
+  memory = "2gb"
+
+#[mounts]
+#  source = "portal"
+#  destination = "/share"

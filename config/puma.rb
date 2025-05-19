@@ -6,7 +6,7 @@
 # the maximum value specified for Puma. Default is set to 5 threads for minimum
 # and maximum; this matches the default thread size of Active Record.
 
-require_relative 'dotenv'
+#require_relative 'dotenv'
 
 max_threads_count = ENV.fetch('RAILS_MAX_THREADS', 15)
 min_threads_count = ENV.fetch('RAILS_MIN_THREADS') { max_threads_count }
@@ -19,7 +19,7 @@ worker_timeout 3600 if ENV.fetch('RAILS_ENV', 'development') == 'development'
 
 # Specifies the `port` that Puma will listen on to receive requests; default is 3000.
 #
-port ENV.fetch('PORT', 3000)
+port ENV.fetch('PORT', 5000)
 
 # Specifies the `environment` that Puma will run in.
 #
@@ -49,10 +49,16 @@ end
 #
 # preload_app!
 
+require 'sidekiq'
+Sidekiq.configure_server do |config|
+  config.redis = { url: ENV['REDIS_URL'] || 'redis://127.0.0.1:6379/0' }
+end
+
 if ENV['MULTITENANT'] != 'true' || ENV['DEMO'] == 'true'
-  require_relative '../lib/puma/plugin/redis_server'
+  # require_relative '../lib/puma/plugin/redis_server'
   require_relative '../lib/puma/plugin/sidekiq_embed'
 
   plugin :sidekiq_embed
-  plugin :redis_server
+  plugin :tmp_restart
+  # plugin :redis_server
 end

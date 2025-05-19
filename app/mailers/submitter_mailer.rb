@@ -33,16 +33,16 @@ class SubmitterMailer < ApplicationMailer
 
     assign_message_metadata('submitter_invitation', @submitter)
 
-    reply_to = build_submitter_reply_to(@submitter)
+    # reply_to = build_submitter_reply_to(@submitter)
 
     I18n.with_locale(@current_account.locale) do
       subject = build_invite_subject(@subject, @email_config, submitter)
 
       mail(
         to: @submitter.friendly_name,
-        from: from_address_for_submitter(submitter),
+        # from: from_address_for_submitter(submitter),
         subject:,
-        reply_to:
+        # reply_to:
       )
     end
   end
@@ -78,7 +78,8 @@ class SubmitterMailer < ApplicationMailer
         ReplaceEmailVariables.call(@subject.presence || I18n.t(:template_name_has_been_completed_by_submitters),
                                    submitter:)
 
-      mail(from: from_address_for_submitter(submitter),
+      mail(
+        # from: from_address_for_submitter(submitter),
            to: to || normalize_user_email(user),
            subject:)
     end
@@ -93,7 +94,8 @@ class SubmitterMailer < ApplicationMailer
     assign_message_metadata('submitter_declined', @submitter)
 
     I18n.with_locale(@current_account.locale) do
-      mail(from: from_address_for_submitter(submitter),
+      mail(
+        # from: from_address_for_submitter(submitter),
            to: user.role == 'integration' ? user.friendly_name.sub(/\+\w+@/, '@') : user.friendly_name,
            reply_to: @submitter.friendly_name,
            subject: I18n.t(:name_declined_by_submitter,
@@ -136,8 +138,7 @@ class SubmitterMailer < ApplicationMailer
           I18n.t(:your_document_copy)
         end
 
-      mail(from: from_address_for_submitter(submitter),
-           to: to || @submitter.friendly_name,
+      mail(to: to || @submitter.friendly_name,
            reply_to:,
            subject:)
     end

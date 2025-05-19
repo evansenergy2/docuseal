@@ -25,7 +25,6 @@ Rails.application.configure do
   # Full error reports are disabled and caching is turned on.
   config.consider_all_requests_local       = false
   config.action_controller.perform_caching = true
-
   config.active_job.queue_adapter = :sidekiq
 
   # Ensures that a master key has been made available in either ENV["RAILS_MASTER_KEY"]
@@ -37,16 +36,18 @@ Rails.application.configure do
   config.public_file_server.enabled = true
 
   # Store uploaded files on the local file system (see config/storage.yml for options).
-  config.active_storage.service =
-    if ENV['S3_ATTACHMENTS_BUCKET'].present?
-      :aws_s3
-    elsif ENV['GCS_BUCKET'].present?
-      :google
-    elsif ENV['AZURE_CONTAINER'].present?
-      :azure
-    else
-      :disk
-    end
+
+  config.active_storage.service = :disk
+  # config.active_storage.service =
+  #   if ENV['S3_ATTACHMENTS_BUCKET'].present?
+  #     :aws_s3
+  #   elsif ENV['GCS_BUCKET'].present?
+  #     :google
+  #   elsif ENV['AZURE_CONTAINER'].present?
+  #     :azure
+  #   else
+  #     :disk
+  #   end
 
   config.active_storage.resolve_model_to_route = :rails_storage_proxy if ENV['ACTIVE_STORAGE_PUBLIC'] != 'true'
   config.active_storage.service_urls_expire_in = ENV.fetch('PRESIGNED_URLS_EXPIRE_MINUTES', '240').to_i.minutes
@@ -77,17 +78,16 @@ Rails.application.configure do
   # Set this to true and configure the email server for immediate delivery to raise delivery errors.
   config.action_mailer.raise_delivery_errors = false
 
+
   if ENV['SMTP_ADDRESS']
     config.action_mailer.delivery_method = :smtp
     config.action_mailer.smtp_settings = {
-      address: ENV.fetch('SMTP_ADDRESS', nil),
-      port: ENV.fetch('SMTP_PORT', 587),
-      domain: ENV.fetch('SMTP_DOMAIN', nil),
-      user_name: ENV.fetch('SMTP_USERNAME', nil),
-      password: ENV.fetch('SMTP_PASSWORD', nil),
-      authentication: ENV.fetch('SMTP_PASSWORD', nil).present? ? ENV.fetch('SMTP_AUTHENTICATION', 'plain') : nil,
-      enable_starttls_auto: ENV['SMTP_ENABLE_STARTTLS_AUTO'] != 'false'
-    }.compact
+      :user_name => ENV["SMTP_USERNAME"],
+      :password => ENV["SMTP_PASSWORD"],
+      :address => ENV['SMTP_ADDRESS'],
+      :port => ENV['SMTP_PORT'],
+      :authentication => :login
+    }
   end
 
   # Enable locale fallbacks for I18n (makes lookups for any locale fall back to

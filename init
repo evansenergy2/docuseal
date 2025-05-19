@@ -1,0 +1,54 @@
+#!/bin/bash
+export PATH=/opt/node/bin:/usr/local/rvm/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/bun/bin:/usr/local/rvm/rubies/ruby-3.3.4/bin
+
+
+# if [ "$APP_ENV" = "staging" ] ; then
+#   . ./.env.stg.fly
+# else
+# . ./.env.prod.fly
+# fi
+
+echo "app_user             hard    nofile           20000" >> /etc/security/limits.conf
+echo "app_user             soft    nofile           20000" >> /etc/security/limits.conf
+
+
+export NODE_ENV=production
+export RAILS_ENV=production
+export BUNDLE_PATH=/app/gems
+
+cd /app
+
+su app_user -c "cd /app && bundle exec rake db:migrate"
+su app_user -c "cd /app && bundle exec rake assets:precompile >/dev/null 2>&1"
+
+
+
+# trap _kill 1 2 3 6 15
+
+# _kill() {
+#   pid=`ps -ef | grep "puma 6.5.0" | grep -v grep | awk '{print $2}'`
+#   echo "**************************************** $pid"
+#   kill -9 $pid
+#   pid=`ps -ef | grep "master process openresty" | grep -v grep | awk '{print $2}'`
+#   echo "**************************************** $pid"
+#   kill -9 $pid
+#   exit  
+# }
+
+chmod 444 /app/lib/libjemalloc.so.2
+
+export LD_PRELOAD=/app/lib/libjemalloc.so.2
+
+su app_user -c "cd /app && RAILS_ENV=production ./bin/shakapacker"
+su app_user -c "cd /app && RAILS_ENV=production bundle exec rake assets:precompile"
+
+su app_user -c "cd /app && RAILS_ENV=production bundle exec rake db:migrate"
+# su app_user -c "cd /app && bundle exec rake assets:precompile >/dev/null 2>&1"
+
+
+
+
+# bundle exec rails s -p 5000 -e production
+su app_user -c "cd /app && BUNDLE_PATH=/app/gems bundle exec puma -t 4:16 -w 2 -p 5000 -e production --preload"
+
+

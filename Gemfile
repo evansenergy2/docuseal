@@ -2,7 +2,7 @@
 
 source 'https://rubygems.org'
 
-ruby '3.4.2'
+ruby '3.4.4'
 
 gem 'arabic-letter-connector', require: 'arabic-letter-connector/logic'
 gem 'aws-sdk-s3', require: false
@@ -22,7 +22,6 @@ gem 'hexapdf'
 gem 'image_processing'
 gem 'jwt'
 gem 'lograge'
-gem 'mysql2', require: false
 gem 'oj'
 gem 'pagy'
 gem 'pg', require: false
@@ -44,6 +43,8 @@ gem 'strip_attributes'
 gem 'turbo-rails'
 gem 'twitter_cldr', require: false
 gem 'tzinfo-data'
+
+#gem 'active_storage_db', '~> 1.3', '>= 1.3.1'
 
 group :development, :test do
   gem 'better_html'

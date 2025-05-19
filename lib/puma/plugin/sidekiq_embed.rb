@@ -62,9 +62,7 @@ Puma::Plugin.create do
       attempt += 1
 
       sleep (attempt - 1) / 10.0
-
       RedisClient.new(url: ENV.fetch('REDIS_URL', nil)).call('GET', '1')
-
       break
     rescue RedisClient::CannotConnectError
       raise('Unable to connect to redis') if attempt > 10

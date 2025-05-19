@@ -194,9 +194,10 @@ export default {
       })
     },
     validateSaveAndClose () {
-      if (!this.withFormula) {
-        return alert(this.t('available_only_in_pro'))
-      }
+      console.log("**********************")
+      // if (!this.withFormula) {
+      //   return alert(this.t('available_only_in_pro'))
+      // }
 
       const normalizedFormula = this.normalizeFormula(this.formula)
 
